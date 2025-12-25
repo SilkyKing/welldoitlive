@@ -91,8 +91,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                     key={persona.id}
                                     onClick={() => handlePersonaSelect(persona)}
                                     className={`w-full text-left px-3 py-3 text-xs font-mono border-l-2 transition-colors flex flex-col gap-1 ${selectedPersonaId === persona.id
-                                            ? "bg-brand-950/20 border-brand-500 text-white"
-                                            : "border-transparent text-neutral-500 hover:text-neutral-300 hover:bg-neutral-900"
+                                        ? "bg-brand-950/20 border-brand-500 text-white"
+                                        : "border-transparent text-neutral-500 hover:text-neutral-300 hover:bg-neutral-900"
                                         }`}
                                 >
                                     <span className="font-bold uppercase tracking-wider">{persona.name}</span>
@@ -117,7 +117,50 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                         </div>
 
                         {/* Footer Actions */}
-                        <div className="h-14 border-t border-grid-line flex items-center justify-end px-4 bg-neutral-950">
+                        <div className="h-14 border-t border-grid-line flex items-center justify-between px-4 bg-neutral-950">
+                            <button
+                                onClick={async () => {
+                                    setIsSaving(true);
+                                    // Seed 5 items
+                                    const seedItems = Array.from({ length: 5 }).map((_, i) => ({
+                                        feed_id: "00000000-0000-0000-0000-000000000000", // Needs a valid feed ID or we handle null in RLS/Schema. Let's assume we need to fetch a feed first or create one? 
+                                        // Actually schema says feed_id is not null. We need a default feed.
+                                        // Simple hack: Create a dummy feed if not exists, or just use a known UUID if we had one.
+                                        // Better: Let's just insert into 'items' and hope RLS lets us or we fix schema. 
+                                        // Actually, let's just make a quick feed fetch or create.
+                                        content: `INTEL_SEED_${i + 1}: Detected anomaly in sector ${Math.floor(Math.random() * 99)}. Market correlation pending.`,
+                                        metadata: { source: "SIMULATION", handle: "GHOST_SIGNAL" }
+                                    }));
+
+                                    // We need to associate with a feed. Let's try to get the first feed or create one.
+                                    let { data: feeds } = await supabase.from('feeds').select('id').limit(1);
+                                    let feedId = feeds?.[0]?.id;
+
+                                    if (!feedId) {
+                                        const { data: newFeed } = await supabase.from('feeds').insert({
+                                            title: 'MAIN_FEED',
+                                            type: 'system',
+                                            user_id: (await supabase.auth.getUser()).data.user?.id
+                                        }).select().single();
+                                        feedId = newFeed?.id;
+                                    }
+
+                                    if (feedId) {
+                                        await supabase.from('items').insert(seedItems.map(item => ({ ...item, feed_id: feedId })));
+                                        alert("Injected 5 Intel Items");
+                                    } else {
+                                        alert("Failed to find/create feed for injection. (Auth needed?)");
+                                    }
+
+                                    setIsSaving(false);
+                                }}
+                                disabled={isSaving}
+                                className="flex items-center gap-2 px-3 py-1.5 bg-neutral-900 border border-neutral-800 text-neutral-500 text-[10px] font-mono hover:text-white transition-all"
+                            >
+                                <Terminal className="w-3 h-3" />
+                                SIMULATE_INTEL
+                            </button>
+
                             <button
                                 onClick={handleSave}
                                 disabled={isSaving}
