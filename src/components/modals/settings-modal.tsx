@@ -137,11 +137,14 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                     let feedId = feeds?.[0]?.id;
 
                                     if (!feedId) {
-                                        const { data: newFeed } = await supabase.from('feeds').insert({
+                                        const user = (await supabase.auth.getUser()).data.user;
+                                        const feedPayload: any = {
                                             title: 'MAIN_FEED',
-                                            type: 'system',
-                                            user_id: (await supabase.auth.getUser()).data.user?.id
-                                        }).select().single();
+                                            type: 'system'
+                                        };
+                                        if (user) feedPayload.user_id = user.id;
+
+                                        const { data: newFeed } = await supabase.from('feeds').insert(feedPayload).select().single();
                                         feedId = newFeed?.id;
                                     }
 
