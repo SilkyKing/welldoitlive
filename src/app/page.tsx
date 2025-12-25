@@ -287,31 +287,25 @@ export default function Home() {
       // 2. Persist to DB
       console.log("Persisting item to bank:", active.id);
       const { data: userData } = await supabase.auth.getUser();
+
+      const payload: any = {
+        item_id: active.id,
+        position: 0 // TODO: Calculate actual position
+      };
+
       if (userData?.user) {
-        // Check if item already in bank to avoid dupes? Or allow dupes?
-        // The active.id corresponds to an 'item' id from 'items' table (if dragged from Feed)
-        // OR 'the_bank' id (if sorting within Bank, but that's caught in first block)
-
-        // WE HAVE A PROBLEM: dnd-kit uses unique IDs. If we drag from Feed, ID is item.id.
-        // If we insert into bank, the bank row has a NEW ID.
-        // But visually we are using the item.id.
-
-        await supabase.from('the_bank').insert({
-          user_id: userData.user.id,
-          item_id: active.id,
-          position: 0 // TODO: Calculate actual position
-        });
-        // The realtime subscription should fetch the new bank row and update UI correctly.
+        payload.user_id = userData.user.id;
       } else {
-        // Fallback for unauth/anon usage if permitted, or just warn
-        console.warn("User not authenticated, cannot persist to bank");
-        // Create mock entry for "guest" if RLS allows
-        await supabase.from('the_bank').insert({
-          // user_id: ... wait, schema requires user_id.
-          // We need a user. If anon, maybe we use a specific guest dummy ID or fix schema.
-          // For now, assume auth is handled or we fail gracefully.
-          item_id: active.id
-        });
+        // Fallback for unauth/anon usage
+        console.warn("User not authenticated, inserting with null user_id (Guest Mode)");
+      }
+
+      const { error } = await supabase.from('the_bank').insert(payload);
+      if (error) {
+        console.error("Bank Persist Error:", error);
+        alert("Failed to save to bank: " + error.message);
+      } else {
+        console.log("Successfully persisted to bank.");
       }
     }
 
