@@ -149,10 +149,16 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                     }
 
                                     if (feedId) {
-                                        await supabase.from('items').insert(seedItems.map(item => ({ ...item, feed_id: feedId })));
-                                        alert("Injected 5 Intel Items");
+                                        const { error: itemsError } = await supabase.from('items').insert(seedItems.map(item => ({ ...item, feed_id: feedId })));
+                                        if (itemsError) {
+                                            console.error("Insert Items Error:", itemsError);
+                                            alert("DATABASE ERROR: " + itemsError.message);
+                                        } else {
+                                            alert("Success: Injected 5 Intel Items. Reloading...");
+                                            window.location.reload();
+                                        }
                                     } else {
-                                        alert("Failed to find/create feed for injection. (Auth needed?)");
+                                        alert("Failed to find/create feed for injection. Check console.");
                                     }
 
                                     setIsSaving(false);
