@@ -126,16 +126,16 @@ export function SettingsModal({ isOpen, onClose, onIntelInjected }: SettingsModa
                             <Terminal className="w-4 h-4 text-brand-400" />
                             <span className="text-sm font-mono font-bold text-neutral-200">WAR_ROOM_CONFIG</span>
                         </div>
-                        <div className="flex bg-neutral-900 rounded p-1 gap-1">
+                        <div className="flex bg-neutral-900 border border-neutral-800 rounded p-1 gap-1">
                             <button
                                 onClick={() => setActiveTab('personas')}
-                                className={`px-3 py-0.5 text-[10px] font-mono rounded ${activeTab === 'personas' ? 'bg-brand-900 text-white' : 'text-neutral-500 hover:text-neutral-300'}`}
+                                className={`px-4 py-1 text-xs font-mono font-bold rounded transition-all ${activeTab === 'personas' ? 'bg-brand-600 text-black shadow-lg shadow-brand-500/20' : 'text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800'}`}
                             >
                                 PERSONAS
                             </button>
                             <button
                                 onClick={() => setActiveTab('sources')}
-                                className={`px-3 py-0.5 text-[10px] font-mono rounded ${activeTab === 'sources' ? 'bg-brand-900 text-white' : 'text-neutral-500 hover:text-neutral-300'}`}
+                                className={`px-4 py-1 text-xs font-mono font-bold rounded transition-all ${activeTab === 'sources' ? 'bg-brand-600 text-black shadow-lg shadow-brand-500/20' : 'text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800'}`}
                             >
                                 SOURCES
                             </button>
