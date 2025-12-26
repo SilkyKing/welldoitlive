@@ -7,6 +7,7 @@ import { supabase } from "@/utils/supabase/client";
 interface SettingsModalProps {
     isOpen: boolean;
     onClose: () => void;
+    onIntelInjected?: () => void;
 }
 
 type Persona = {
@@ -17,7 +18,7 @@ type Persona = {
     icon_slug: string;
 };
 
-export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
+export function SettingsModal({ isOpen, onClose, onIntelInjected }: SettingsModalProps) {
     const [personas, setPersonas] = useState<Persona[]>([]);
     const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(null);
     const [editedPrompt, setEditedPrompt] = useState("");
@@ -154,8 +155,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                             console.error("Insert Items Error:", itemsError);
                                             alert("DATABASE ERROR: " + itemsError.message);
                                         } else {
-                                            alert("Success: Injected 5 Intel Items. Reloading...");
-                                            window.location.reload();
+                                            alert("Success: Injected 5 Intel Items.");
+                                            if (onIntelInjected) onIntelInjected();
                                         }
                                     } else {
                                         alert("Failed to find/create feed for injection. Check console.");

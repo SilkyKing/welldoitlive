@@ -95,52 +95,51 @@ export default function Home() {
   const [contextMenu, setContextMenu] = useState<{ visible: boolean; x: number; y: number; id: string } | null>(null);
   const [personas, setPersonas] = useState<Persona[]>([]);
 
+  const fetchBank = useCallback(async () => {
+    const { data } = await supabase
+      .from('the_bank')
+      .select(`*, items (*)`)
+      .order('position');
+
+    if (data) {
+      const bankItems: Item[] = data.map((row: any) => ({
+        id: row.items.id,
+        source: row.items.metadata?.source || "SAVED",
+        handle: row.items.metadata?.handle || "system",
+        time: "stored",
+        content: row.items.content || row.note || "",
+        showAiOverlay: !!row.ai_analysis,
+        aiAnalysis: row.ai_analysis?.content || JSON.stringify(row.ai_analysis),
+        isBank: true
+      }));
+      setItems(prev => ({ ...prev, "the-bank": bankItems }));
+    }
+  }, []);
+
+  const fetchFeed = useCallback(async () => {
+    // Fetch items that are NOT in the bank (naive check: just fetch recent items)
+    const { data } = await supabase.from('items').select('*').order('created_at', { ascending: false }).limit(20);
+    if (data) {
+      const feedItems: Item[] = data.map((row: any) => ({
+        id: row.id,
+        source: row.metadata?.source || "UNKNOWN",
+        handle: row.metadata?.handle || "anon",
+        time: "live",
+        content: row.content,
+        showAiOverlay: false,
+        isBank: false
+      }));
+      setItems(prev => ({ ...prev, "feed-1": feedItems }));
+    }
+  }, []);
+
+  const fetchPersonas = useCallback(async () => {
+    const { data } = await supabase.from('personas').select('id, name, icon_slug, model').order('name');
+    if (data) setPersonas(data);
+  }, []);
+
   // Fetch Logic
   useEffect(() => {
-    const fetchBank = async () => {
-      const { data } = await supabase
-        .from('the_bank')
-        .select(`*, items (*)`)
-        .order('position');
-
-      if (data) {
-        const bankItems: Item[] = data.map((row: any) => ({
-          id: row.items.id,
-          source: row.items.metadata?.source || "SAVED",
-          handle: row.items.metadata?.handle || "system",
-          time: "stored",
-          content: row.items.content || row.note || "",
-          showAiOverlay: !!row.ai_analysis,
-          aiAnalysis: row.ai_analysis?.content || JSON.stringify(row.ai_analysis),
-          isBank: true
-        }));
-        setItems(prev => ({ ...prev, "the-bank": bankItems }));
-      }
-    };
-
-    const fetchFeed = async () => {
-      // Fetch items that are NOT in the bank (naive check: just fetch recent items)
-      // Ideally we filter out ones already in bank, but for MVP let's just show recent 10.
-      const { data } = await supabase.from('items').select('*').order('created_at', { ascending: false }).limit(20);
-      if (data) {
-        const feedItems: Item[] = data.map((row: any) => ({
-          id: row.id,
-          source: row.metadata?.source || "UNKNOWN",
-          handle: row.metadata?.handle || "anon",
-          time: "live",
-          content: row.content,
-          showAiOverlay: false,
-          isBank: false
-        }));
-        setItems(prev => ({ ...prev, "feed-1": feedItems }));
-      }
-    };
-
-    const fetchPersonas = async () => {
-      const { data } = await supabase.from('personas').select('id, name, icon_slug, model').order('name');
-      if (data) setPersonas(data);
-    };
-
     fetchBank();
     fetchFeed();
     fetchPersonas();
@@ -159,7 +158,7 @@ export default function Home() {
       supabase.removeChannel(channelBank);
       supabase.removeChannel(channelItems);
     };
-  }, []);
+  }, [fetchBank, fetchFeed, fetchPersonas]);
 
   // AI Consult Logic
   const handleConsult = async (content: string, personaId: string, itemId: string) => {
@@ -396,7 +395,7 @@ export default function Home() {
       </DragOverlay>
 
       <AddColumnModal isOpen={showAddModal} onClose={() => setShowAddModal(false)} onAdd={() => setShowAddModal(false)} />
-      <SettingsModal isOpen={showSettingsModal} onClose={() => setShowSettingsModal(false)} />
+      <SettingsModal isOpen={showSettingsModal} onClose={() => setShowSettingsModal(false)} onIntelInjected={fetchFeed} />
 
       {contextMenu && (
         <ContextMenu
